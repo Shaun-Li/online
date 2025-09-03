@@ -1,6 +1,6 @@
 async function gk(keyBase64) {
     const byteArr = new TextEncoder().encode(keyBase64);
-    const keyBuffer   = byteArr.slice(0, 32);
+    const keyBuffer = byteArr.slice(0, 32);
 
     return crypto.subtle.importKey(
         'raw',
@@ -13,26 +13,18 @@ async function gk(keyBase64) {
 
 async function cbc(key, ivStr, plaintext) {
     const byteArr = new TextEncoder().encode(ivStr);
-    const iv   = byteArr.slice(0, 16);
+    const iv = byteArr.slice(0, 16);
 
     const encoder = new TextEncoder();
     const data = encoder.encode(plaintext);
 
     try {
-        const cipherBuffer = await crypto.subtle.encrypt(
-            {
-                name: 'AES-CBC',
-                iv: iv
-            },
-            key,
-            data
-        );
+        const cipherBuffer = await crypto.subtle.encrypt({name: 'AES-CBC',iv: iv}, key, data);
 
-        // return btoa(String.fromCharCode(...new Uint8Array(cipherBuffer)));
         const cipherArr = new Uint8Array(cipherBuffer);
         let binary = '';
         for (let i = 0, len = cipherArr.length; i < len; i++) {
-        binary += String.fromCharCode(cipherArr[i]);
+            binary += String.fromCharCode(cipherArr[i]);
         }
         return btoa(binary);
 
@@ -88,11 +80,7 @@ window.ed = async function (data) {
         const encrypt = await cbc(key, data1Str, data2Str);
         const e = await cbc(key, data1Str, encrypt);
 
-        // return { ...data, e, c1: date };
-        return Object.assign({}, data, {
-            e,
-            c1: date
-        });
+        return Object.assign({}, data, {e, c1: date});
     } catch (error) {
         console.error('加密失败:', error.message);
         return data;
