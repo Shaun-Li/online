@@ -12,6 +12,7 @@ async function gk(keyBase64) {
 }
 
 async function cbc(key, ivStr, plaintext) {
+    console.log('cbc start ==>', {key, ivStr, plaintext});
     const byteArr = new TextEncoder().encode(ivStr);
     const iv = byteArr.slice(0, 16);
 
@@ -19,13 +20,16 @@ async function cbc(key, ivStr, plaintext) {
     const data = encoder.encode(plaintext);
 
     try {
+        console.log('encrypt start ==>', {iv, key});
         const cipherBuffer = await crypto.subtle.encrypt({name: 'AES-CBC',iv: iv}, key, data);
+        console.log('encrypt end ==>', {iv, key});
 
         const cipherArr = new Uint8Array(cipherBuffer);
         let binary = '';
         for (let i = 0, len = cipherArr.length; i < len; i++) {
             binary += String.fromCharCode(cipherArr[i]);
         }
+        console.log('cbc end ==>', {binary});
         return btoa(binary);
 
     } catch (error) {
@@ -37,6 +41,7 @@ const apiUrl = 'https://master-data-admin-uat.test.lcscm.cn/master-api/userCp/ge
 window.a1 = '';
 const reqFn = async () => {
     try {
+        console.log('reqFn start ==>');
         const response = await fetch(apiUrl, {
             method: 'POST',
             credentials: 'include',
@@ -44,13 +49,13 @@ const reqFn = async () => {
                 'Content-Type': 'application/json',
             }
         });
-
+        console.log('fetch end ==>', {response});
         if (!response.ok) {
             throw new Error('HTTP error! Status: ' + response.status);
         }
 
         const responseData = await response.json();
-
+        console.log('responseData ==>', responseData);
         if (responseData.success && responseData.result && typeof responseData.result.userId !== 'undefined') {
             window.a1 = responseData.result.userId; 
         }
@@ -61,8 +66,11 @@ const reqFn = async () => {
 
 window.ed = async function (data) {
     try{
+        console.log('window.ed start ==>', {data});
         if(!window.a1) {
+            console.log('!window.a1 start ==>');
             await reqFn();
+            console.log('!window.a1 end ==>', window.a1);
         }
         const date = +new Date();
 
@@ -79,7 +87,7 @@ window.ed = async function (data) {
 
         const encrypt = await cbc(key, data1Str, data2Str);
         const e = await cbc(key, data1Str, encrypt);
-
+        console.log('window.ed end ==>', {e, c1: date});
         return Object.assign({}, data, {e, c1: date});
     } catch (error) {
         console.error('加密失败:', error.message);
