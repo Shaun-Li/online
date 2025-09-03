@@ -34,6 +34,7 @@ async function cbc(key, ivStr, plaintext) {
     }
 }
 const apiUrl = 'https://master-data-admin-uat.test.lcscm.cn/master-api/userCp/getUserInfo';
+window.a1 = '';
 const reqFn = async () => {
     try {
         const response = await fetch(apiUrl, {
@@ -51,26 +52,37 @@ const reqFn = async () => {
         const responseData = await response.json();
 
         if (responseData.success && responseData.result && typeof responseData.result.userId !== 'undefined') {
-            const a1 = responseData.result.userId;
-            window.ed = async function (data) {
-                const date = (new Date()).getTime();
-
-                const data1 = { currentDate: date+''+date };
-                const data2 = { ...data, currentDate: (new Date()).getTime(), a1 };
-
-                const data1Str =JSON.stringify(data1);
-                const data2Str =JSON.stringify(data2);
-
-                const key = await gk(data1Str);
-
-                const encrypt = await cbc(key, data1Str, data2Str);
-                const e = await cbc(key, data1Str, encrypt);
-
-                return { ...data, e, c1: date };
-            }
+            window.a1 = responseData.result.userId; 
         }
     } catch (error) {
         console.error('请求失败:', error.message);
     }
 };
-reqFn()
+
+window.ed = async function (data) {
+    try{
+        if(!window.a1) {
+            await reqFn();
+        }
+        const date = +new Date();
+
+        const data1 = { currentDate: date+''+date };
+        const data2 = Object.assign({}, data, {
+            currentDate: date,
+            a1: window.a1
+        });
+
+        const data1Str =JSON.stringify(data1);
+        const data2Str =JSON.stringify(data2);
+
+        const key = await gk(data1Str);
+
+        const encrypt = await cbc(key, data1Str, data2Str);
+        const e = await cbc(key, data1Str, encrypt);
+
+        return Object.assign({}, data, {e, c1: date});
+    } catch (error) {
+        console.error('加密失败:', error.message);
+        return data;
+    } 
+}
